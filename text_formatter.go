@@ -54,6 +54,10 @@ type TextFormatter struct {
 	// that log extremely frequently and don't use the JSON formatter this may not
 	// be desired.
 	DisableSorting bool
+
+	// Set to true to display colors, if coloring is enabled, in bold.  This may
+	// be easier to read on some terminals.
+	BoldColors bool
 }
 
 func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
@@ -111,10 +115,15 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 
 	levelText := strings.ToUpper(entry.Level.String())[0:4]
 
+	bold := ""
+	if f.BoldColors {
+		bold = "1;"
+	}
+
 	if !f.FullTimestamp {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d] %-44s ", levelColor, levelText, miniTS(), entry.Message)
+		fmt.Fprintf(b, "\x1b[%s%dm%s\x1b[0m[%04d] %-44s ", bold, levelColor, levelText, miniTS(), entry.Message)
 	} else {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %-44s ", levelColor, levelText, entry.Time.Format(timestampFormat), entry.Message)
+		fmt.Fprintf(b, "\x1b[%s%dm%s\x1b[0m[%s] %-44s ", bold, levelColor, levelText, entry.Time.Format(timestampFormat), entry.Message)
 	}
 	for _, k := range keys {
 		v := entry.Data[k]
@@ -122,7 +131,7 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 		case Fn:
 			v = vf()
 		}
-		fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=%+v", levelColor, k, v)
+		fmt.Fprintf(b, " \x1b[%s%dm%s\x1b[0m=%+v", bold, levelColor, k, v)
 	}
 }
 
