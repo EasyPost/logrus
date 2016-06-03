@@ -98,12 +98,15 @@ func (entry Entry) log(level Level, msg string) {
 		entry.Logger.mu.Unlock()
 	}
 
-	entry.Logger.mu.Lock()
-	defer entry.Logger.mu.Unlock()
+	// don't bother with the overhead of copying a zero-length output
+	if reader.Len() != 0 {
+		entry.Logger.mu.Lock()
+		defer entry.Logger.mu.Unlock()
 
-	_, err = io.Copy(entry.Logger.Out, reader)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write to log, %v\n", err)
+		_, err = io.Copy(entry.Logger.Out, reader)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to write to log, %v\n", err)
+		}
 	}
 
 	// To avoid Entry#log() returning a value that only would make sense for
